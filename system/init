@@ -25,8 +25,11 @@ mkdir -p /home/pi/myimage
 mkdir -p /home/pi/myaudio
 mkdir -p /home/pi/mymodel
 
+# motor init
+servo init
+
 # ap start
-sudo /home/pi/openpibo-os/system/wifi-ap-sta start
+sudo /home/pi/openpibo-os/system/hotspot.sh start
 
 # network init
 cd /home/pi/openpibo-os/system;sudo /home/pi/.pyenv/bin/python3 booting.py &
@@ -36,19 +39,10 @@ cd /home/pi/openpibo-os/system;sudo /home/pi/.pyenv/bin/python3 booting.py &
 cd /home/pi/openpibo-os/ide;sudo /home/pi/.pyenv/bin/python3 run_ide.py &
 cd /home/pi/openpibo-os/tools;sudo /home/pi/.pyenv/bin/python3 run_tools.py &
 
-# motor init
-servo init
-
-# ap start
-#sudo /home/pi/openpibo-os/system/wifi-ap-sta run
-
 # Amp init
 sudo gpio mode 7 out
 sudo gpio write 7 1
 
-# pir on
-#echo "#30:on!" > /dev/ttyS0
-
-#sudo iw wlan0 set power_save off
+sudo iw wlan0 set power_save off
 #sudo iw ap0 set power_save off
 exit 0

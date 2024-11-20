@@ -191,7 +191,7 @@ class Pibo:
       #self.cam.putText(im, "{}:{:.1f}%".format(self.tm.class_names[i], raw[i]*100), (50, 50+((i+1)*25)), 0.7, colors, 1)
       pred = f"{res[i]['score']}%"
       text= f"{res[i]['name']}:{pred}"
-      points = (20, 20+((i+1)*25))
+      points = (20, 20+(i*25))
       im = self.cam.putTextPIL(im, text, points, 20, (0,0,0))
       #ImageDraw.Draw(im).text(points, text, font=self.pil_font, fill=(0,0,0))
       r.append(f"{res[i]['name']}: {pred}")
@@ -231,7 +231,7 @@ class Pibo:
       #self.cam.putText(im, "{}:{:.1f}%".format(self.tm.class_names[i], raw[i]*100), (50, 50+((i+1)*25)), 0.7, colors, 1)
       pred = f"{float(raw[i]/255.0)*100:.1f}%" if quantization else f"{raw[i]*100:.1f}%"
       text= f"{self.tm.class_names[i]}:{pred}"
-      points = (20, 20+((i+1)*25))
+      points = (20, 20+(i*25))
       im = self.cam.putTextPIL(im, text, points, 20, (0,0,0))
       #ImageDraw.Draw(im).text(points, text, font=self.pil_font, fill=(0,0,0))
       r.append(f"{self.tm.class_names[i]}: {pred}")

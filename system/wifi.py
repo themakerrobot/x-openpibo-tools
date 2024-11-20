@@ -1,71 +1,55 @@
-import re
 import subprocess
-from operator import itemgetter
 
-cellNumberRe = re.compile(r"^Cell\s+(?P<cellnumber>.+)\s+-\s+Address:\s(?P<mac>.+)$")
-regexps = [
-    re.compile(r"^ESSID:\"(?P<essid>.*)\"$"),
-    re.compile(r"^Protocol:(?P<protocol>.+)$"),
-    re.compile(r"^Mode:(?P<mode>.+)$"),
-    re.compile(r"^Frequency:(?P<frequency>[\d.]+) (?P<frequency_units>.+) \(Channel (?P<channel>\d+)\)$"),
-    re.compile(r"^Encryption key:(?P<encryption>.+)$"),
-    re.compile(r"^Quality=(?P<signal_quality>\d+)/(?P<signal_total>\d+)\s+Signal level=(?P<signal_level_dBm>.+) d.+$"),
-    re.compile(r"^Signal level=(?P<signal_quality>\d+)/(?P<signal_total>\d+).*$"),
-]
-
-# Detect encryption type
-wpaRe = re.compile(r"IE:\ WPA\ Version\ 1$")
-wpa2Re = re.compile(r"IE:\ IEEE\ 802\.11i/WPA2\ Version\ 1$")
-
-# Runs the comnmand to scan the list of networks.
-# Must run as super user.
-# Does not specify a particular device, so will scan all network devices.
-def scan(interface='wlan0'):
-    cmd = ["iwlist", interface, "scan"]
+def scan_with_nmcli():
+    cmd = ["nmcli", "-f", "SSID,SECURITY,SIGNAL", "dev", "wifi"]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    points = proc.stdout.read().decode('utf-8')
-    return points
+    output, error = proc.communicate()
+    if error:
+        print(f"Error: {error.decode('utf-8')}")
+        return []
+    return output.decode("utf-8").splitlines()
 
-# Parses the response from the command "iwlist scan"
-def parse(content):
-    cells = []
-    lines = content.split('\n')
-    for line in lines:
-        line = line.strip()
-        cellNumber = cellNumberRe.search(line)
-        if cellNumber is not None:
-            cells.append(cellNumber.groupdict())
+def parse_nmcli_output(lines):
+    networks = []
+    for line in lines[1:]:  # Skip the first line, which is the header
+        columns = line.split()
+        
+        if len(columns) == 0:
+          continue
+
+        ssid = columns[0]
+        # Filter out hidden networks (SSID is empty or '--')
+        if ssid == "" or ssid == "--":
             continue
-        wpa = wpaRe.search(line)
-        if wpa is not None :
-            cells[-1].update({'encryption':'wpa'})
-        wpa2 = wpa2Re.search(line)
-        if wpa2 is not None :
-            cells[-1].update({'encryption':'wpa2'}) 
-        for expression in regexps:
-            result = expression.search(line)
-            if result is not None:
-                if 'encryption' in result.groupdict() :
-                    if result.groupdict()['encryption'] == 'on' :
-                        cells[-1].update({'encryption': 'wep'})
-                    else :
-                        cells[-1].update({'encryption': 'off'})
-                else :
-                    cells[-1].update(result.groupdict())
-                continue
-    return cells
 
-def wifi_scan(interface='wlan0'):
-  results = parse(scan(interface=interface))
-  results = sorted(results, key=lambda x:x['signal_quality'], reverse=True)
-  items = []
-  ssid_list = []
+        security = " ".join(columns[1:-1])  # SECURITY can have multiple words
+        signal = columns[-1]
+        encryption = "unknown"
 
-  for item in results:
-    if item['essid'] != "" and item['essid'] not in ssid_list and not '\x00' in item['essid']:
-      ssid_list.append(item['essid'])
-      items.append({'essid':item['essid'].strip(), 'quality':item['signal_quality'], 'dBm':item['signal_level_dBm'], 'encryption':item['encryption']})
-  return items
+        # Determine encryption type
+        if "WPA2" in security:
+            if "802.1X" in security:
+                encryption = "wpa-eap"
+            else:
+                encryption = "wpa-psk"
+        elif "WPA" in security:
+            encryption = "wpa-psk"
+        elif "WEP" in security:
+            continue
+        else:
+            encryption = "none"
+
+        networks.append({
+            "essid": ssid,
+            "signal_quality": signal,
+            "encryption": encryption
+        })
+    return networks
+
+def wifi_scan():
+    output_lines = scan_with_nmcli()
+    return parse_nmcli_output(output_lines)
 
 if __name__ == "__main__":
-  print(parse(scan()))
+    print(wifi_scan())
+

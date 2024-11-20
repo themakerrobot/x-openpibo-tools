@@ -5,10 +5,10 @@ def run():
 
     v = os.popen('/home/pi/openpibo-os/system/system.sh').read().strip('\n').split(',')
     o = Oled()
-    if v[8] != "" and v[8][0:3] != "169":
-      wip, ssid, sn = v[8], "", v[0][-8:]
+    if v[7] != "" and v[7][0:3] != "169":
+      wip, ssid, sn = v[7], "", v[0][-8:]
     elif v[6] != "" and v[6][0:3] != "169":
-      wip, ssid, sn = v[6], v[7], v[0][-8:]
+      wip, ssid, sn = v[6], v[8], v[0][-8:]
     else:
       wip, ssid, sn = "", "", v[0][-8:]
 

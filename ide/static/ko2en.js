@@ -11,8 +11,16 @@ const translations = {
     en: "Internet settings"
   },
   wifi_name: {
-    ko: "Wifi 이름",
-    en: "Wifi Name"
+    ko: "이름",
+    en: "Name"
+  },
+  wifi_type: {
+    ko: "종류",
+    en: "Type"
+  },
+  wifi_identity: {
+    ko: "아이디",
+    en: "Identity"
   },
   confirm: {
     ko: "확인",

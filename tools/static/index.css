@@ -892,17 +892,6 @@ label[for=v_import_motion]:active {
   position:absolute;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 .wifi-popup,
 .usedata-popup {
   display: none;
@@ -937,8 +926,8 @@ label[for=v_import_motion]:active {
   margin: 10% auto;
   padding: 10px 20px 10px 20px;
   border: 1px solid #888;
-  width: 700px;
-  height: 390px;
+  width: 530px;
+  height: 450px;
   border-radius: 15px;
 }
 .wifi-popup-content input:disabled {
@@ -946,14 +935,14 @@ label[for=v_import_motion]:active {
   filter: grayscale(0.5);
 }
 .wifi-popup-content input[type="text"] {
-  width: 320px;
+  width: 280px;
   border: 1px solid #ccc;
-  margin: 5px auto;
+  margin: 3px auto;
 }
 .wifi-popup-content input[type="password"] {
-  width: 320px;
+  width: 280px;
   border: 1px solid #ccc;
-  margin: 5px auto;
+  margin: 3px auto;
 }
 .wifi_list {
   text-align:center;
@@ -977,14 +966,8 @@ label[for=v_import_motion]:active {
   /* float: left; */
   border: none;
   cursor: pointer;
-  width: 100%;
-}
-.wifi-popup-content .cancel {
-  background-color: #ccc;
-  /* float: right; */
-  border: none;
-  cursor: pointer;
-  width: 100%;
+  width: 100px;
+  height: 100px;
 }
 
 .wifi-popup-content tr {
@@ -992,9 +975,7 @@ label[for=v_import_motion]:active {
 }
 
 .wifi-popup-content .confirm:hover,
-.wifi-popup-content .confirm:focus,
-.wifi-popup-content .cancel:hover,
-.wifi-popup-content .cancel:focus {
+.wifi-popup-content .confirm:focus {
   opacity:0.8;
 }
 

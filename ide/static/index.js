@@ -229,8 +229,8 @@ socket.on("system", (data) => {
   $("#s_runtime").text(`${Math.floor(data[2] / 3600)} hours`);
   $("#s_cpu_temp").text(data[3]);
   $("#s_memory").text(`${Math.floor(data[5]/data[4]/4*100)} %`);
-  $("#s_network").html(`<i class="fas fa-network-wired"></i> ${data[8]}, <i class="fa-solid fa-wifi"></i> ${data[6]}/${data[7]}`);
-  $("#network_info").html(`<i class="fas fa-network-wired"></i> ${data[8]}, <i class="fa-solid fa-wifi"></i> ${data[6]}/${data[7]}`);
+  $("#s_network").html(`<i class="fas fa-network-wired"></i> ${data[7]}, <i class="fa-solid fa-wifi"></i> ${data[6]}/${data[8]}`);
+  $("#network_info").html(`<i class="fas fa-network-wired"></i> ${data[7]}, <i class="fa-solid fa-wifi"></i> ${data[6]}/${data[8]}`);
 });
 
 let startTime_item = new Date().getTime();
@@ -406,7 +406,8 @@ socket.on("update_file_manager", (d) => {
               }
             })
             ,
-            $("<td style='width:15px;text-align:center'>").append(["", "folder"].includes(data[i].type) || data[i].protect==true?"":`<a href='/download?filename=${data[i].name}'><i class='fa-solid fa-circle-down'></i></a>`)
+            $("<td style='width:15px;text-align:center'>").append(data[i].type == "" || data[i].protect==true?"":`<a href='/download?filename=${data[i].name}'><i class='fa-solid fa-circle-down'></i></a>`)
+            //$("<td style='width:15px;text-align:center'>").append(["", "folder"].includes(data[i].type) || data[i].protect==true?"":`<a href='/download?filename=${data[i].name}'><i class='fa-solid fa-circle-down'></i></a>`)
               .hover(
                 function () { $(this).animate({ opacity: "0.3" }, 100); },
                 function () { $(this).animate({ opacity: "1" }, 100); }
@@ -942,7 +943,7 @@ $("#showNetwork").on("click", ()=>{
           $("<tr>")
             .append(
               $("<td>").append(data[i].essid),
-              $("<td>").append(`${data[i].quality} / ${data[i].dBm}dBm`),
+              $("<td>").append(`${data[i].signal_quality} %`),
               $("<td>").append(data[i].encryption)
             )
             .hover(
@@ -956,13 +957,22 @@ $("#showNetwork").on("click", ()=>{
             .click(function () {
               let lst = $(this).children();
               $("#ssid").val(lst.eq(0).text());
+              $("#identity").val("");
               $("#psk").val("");
-              if(lst.eq(2).text() == "off") {
-                $("#enctype_open").prop("checked", true);
+              $(`input[name='wifi_type_sel'][value='${lst.eq(2).text()}']`).prop("checked", true).trigger("change");
+              if(lst.eq(2).text() == "none") { // open
+                $("#ssid").prop("disabled", false);
+                $("#identity").prop("disabled", true);
                 $("#psk").prop("disabled", true);
               }
-              else {
-                $("#enctype_open").prop("checked", false);
+              else if(lst.eq(2).text() == "wpa-psk") { // wpa-psk
+                $("#ssid").prop("disabled", false);
+                $("#identity").prop("disabled", true);
+                $("#psk").prop("disabled", false);
+              }
+              else if(lst.eq(2).text() == "wpa-eap") { // wpa-enterprise
+                $("#ssid").prop("disabled", false);
+                $("#identity").prop("disabled", false);
                 $("#psk").prop("disabled", false);
               }
             })
@@ -985,38 +995,35 @@ $.ajax({
   if (status == "success") {
     $("#ssid").val(xhr["ssid"]);
     $("#psk").val(xhr["psk"]);
-    if(xhr["psk"] == "") {
-      $("#enctype_open").prop("checked", true);
+    if(xhr["key-mgmt"] == "none") { // open
+      $("#ssid").prop("disabled", false);
+      $("#identity").prop("disabled", true);
+      $("#identity").val("");
       $("#psk").prop("disabled", true);
+      $("#psk").val("");
+      $(`input[name='wifi_type_sel'][value='${xhr["key-mgmt"]}']`).prop("checked", true).trigger("change");
     }
-    else {
-      $("#enctype_open").prop("checked", false);
+    else if(xhr["key-mgmt"] == "wpa-psk") { // wpa-psk
+      $("#ssid").prop("disabled", false);
+      $("#ssid").val(xhr["ssid"]);
+      $("#identity").prop("disabled", true);
+      $("#identity").val("");
       $("#psk").prop("disabled", false);
+      $("#psk").val(xhr["psk"]);
+      $(`input[name='wifi_type_sel'][value='${xhr["key-mgmt"]}']`).prop("checked", true).trigger("change");
+    }
+    else if(xhr["key-mgmt"] == "wpa-eap") { // wpa-enterprise
+      $("#ssid").prop("disabled", false);
+      $("#ssid").val(xhr["ssid"]);
+      $("#identity").prop("disabled", false);
+      $("#identity").val(xhr["identity"]);
+      $("#psk").prop("disabled", false);
+      $("#psk").val(xhr["psk"]);
+      $(`input[name='wifi_type_sel'][value='${xhr["key-mgmt"]}']`).prop("checked", true).trigger("change");
     }
   } else {
     //
   }
-});
-
-$("#current_wifi").on("click", ()=> {
-  $.ajax({
-    url: `http://${location.hostname}:${system_port}/wifi`,
-  }).always((xhr, status) => {
-    if (status == "success") {
-      $("#ssid").val(xhr["ssid"]);
-      $("#psk").val(xhr["psk"]);
-      if(xhr["psk"] == "") {
-        $("#enctype_open").prop("checked", true);
-        $("#psk").prop("disabled", true);
-      }
-      else {
-        $("#enctype_open").prop("checked", false);
-        $("#psk").prop("disabled", false);
-      }
-    } else {
-      //
-    }
-  });
 });
 
 $("#wifi_bt").on("click", function () {
@@ -1028,7 +1035,7 @@ $("#wifi_bt").on("click", function () {
     $.ajax({
       url: `http://${location.hostname}:${system_port}/wifi`,
       type: "post",
-      data: JSON.stringify({ssid:$("#ssid").val().trim(), psk:$("#psk").val().trim()}),
+      data: JSON.stringify({ssid:$("#ssid").val().trim(), psk:$("#psk").val().trim(), identity:$("#identity").val().trim()}),
       contentType: "application/json",
     }).always((xhr, status) => {
       if (status == "success") {
@@ -1096,29 +1103,39 @@ $("#hideUsedata").on("click", ()=>{
   document.getElementById("usedataPopup").style.display = "none";
 });
 
-$('#password_check').on('click',function(){
-  $('#password_check').toggleClass('active');
-  $('#password').prop('type', $('#password_check').hasClass('active')?"text":"password");
+$('#psk_visible').on('click',function(){
+  $('#psk_visible').toggleClass('active');
+  $('#psk').prop('type', $('#psk_visible').hasClass('active')?"text":"password");
 });
 
-$('#psk_check').on('click',function(){
-  $('#psk_check').toggleClass('active');
-  $('#psk').prop('type', $('#psk_check').hasClass('active')?"text":"password");
-});
-
-$('#ssid_en').on('click', function(){
-  $("#ssid").prop("disabled", $("#ssid_en").is(":checked")?false:true);
-});
-
-$("#enctype_open").on('click', function(){
-  if($("#enctype_open").is(":checked")){
-    $("#psk").val("");
-    $("#psk").prop("disabled", true);
+$('input[name="wifi_type_sel"]').on('click', function () {
+  // 선택된 라디오 버튼의 값을 가져오기
+  const selectedValue = $(this).val();
+  if (selectedValue === 'wpa-psk') {
+      console.log("WPA 설정을 선택했습니다.");
+      $("#ssid").prop("disabled", false);
+      $("#identity").prop("disabled", true);
+      $("#identity").val("");
+      $("#psk").prop("disabled", false);
+  } else if (selectedValue === 'none') {
+      console.log("Open 설정을 선택했습니다.");
+      $("#ssid").prop("disabled", false);
+      $("#identity").prop("disabled", true);
+      $("#identity").val("");
+      $("#psk").prop("disabled", true);
+      $("#psk").val("");
+  } else if (selectedValue === 'wpa-eap') {
+      console.log("WPA-EAP 설정을 선택했습니다.");
+      $("#ssid").prop("disabled", false);
+      $("#identity").prop("disabled", false);
+      $("#psk").prop("disabled", false);        
+  } else if (selectedValue === 'custom') {
+      console.log("Custom 설정을 선택했습니다.");
+      $("#ssid").prop("disabled", false);
+      $("#identity").prop("disabled", false);
+      $("#psk").prop("disabled", false);        
   }
-  else{
-    $("#psk").prop("disabled", false);
-  }
-});
+}); 
 
 $("#prompt").on("keypress", function (evt) {
   if (evt.keyCode == 13) {
